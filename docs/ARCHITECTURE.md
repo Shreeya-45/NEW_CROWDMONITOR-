@@ -2,34 +2,16 @@
 
 ## System Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                    CROWD MONITORING SYSTEM                          │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  [CAMERA FEED]                                                     │
-│       ↓                                                             │
-│  [DETECTOR] ← yolov8m.pt (human detection)                        │
-│       ↓                                                             │
-│  [HOMOGRAPHY TRANSFORM] ← homography.npy                          │
-│  pixel (cx, cy) → world (wx, wy)  [NEW!]                         │
-│       ↓                                                             │
-│  [DETECTIONS LIST]                                                 │
-│  Each person: (x1, y1, x2, y2, cx, cy, wx, wy, row, col, pid)   │
-│       ↓                                                             │
-│  [DENSITY TRACKER]                                                 │
-│  Convex hull in world space → m² area [UPDATED!]                 │
-│       ↓                                                             │
-│  [GRID ANALYSIS]                                                   │
-│  Per-cell density with real m² [UPDATED!]                        │
-│       ↓                                                             │
-│  [RISK ASSESSMENT]                                                 │
-│       ↓                                                             │
-│  [LOGGING & ALERTS]                                                │
-│       ↓                                                             │
-│  [UI DISPLAY]                                                      │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[CAMERA FEED] -->|yolov8m.pt human detection| B[DETECTOR]
+    B -->|pixel cx, cy| C[HOMOGRAPHY TRANSFORM]
+    C -->|world wx, wy NEW!| D[DETECTIONS LIST]
+    D -->|Convex hull area| E[DENSITY TRACKER]
+    E -->|Real m² per-cell| F[GRID ANALYSIS]
+    F --> G[RISK ASSESSMENT]
+    G --> H[LOGGING & ALERTS]
+    H --> I[UI DISPLAY]
 ```
 
 ---
@@ -250,63 +232,53 @@ python calibration_tool.py --recalibrate # Force recalibration
 
 ### Initialization
 
-```
-main.py starts
-    ↓
-startup_calibration_check()
-    ├─ os.path.exists("homography.npy")?
-    │   ├─ YES → calibration.load_homography()
-    │   │         Set _H, _H_inv, _cell_areas
-    │   │         ✓ Calibrated mode
-    │   └─ NO → User chooses:
-    │       ├─ Option 1: calibration.run_live_calibration_ui()
-    │       ├─ Option 2: Use fallback constant (_H = None)
-    │       └─ Option 3: Exit (run tool separately)
-    ↓
-select_place()
-    ↓
-Main monitoring loop
+```mermaid
+flowchart TD
+    A[main.py starts] --> B[startup_calibration_check]
+    B --> C{homography.npy exists?}
+    C -->|YES| D[calibration.load_homography<br>Set _H, _H_inv, _cell_areas]
+    C -->|NO| E[User chooses option]
+    E -->|Option 1| F[run_live_calibration_ui]
+    E -->|Option 2| G[Use fallback constant _H = None]
+    E -->|Option 3| H[Exit and run tool separately]
+    D --> I[select_place]
+    F --> I
+    G --> I
+    I --> J[Main monitoring loop]
 ```
 
 ### Per-Frame Processing
 
-```
-Frame captured
-    ↓
-run_detection(model, frame)
-    ├─ YOLO detects humans
-    ├─ For each detection:
-    │   ├─ Compute pixel centroid: (cx, cy)
-    │   ├─ If calibration.is_calibrated():
-    │   │   └─ wx, wy = calibration.px_to_world([(cx, cy)])
-    │   └─ Append detection dict with wx, wy
-    ↓
-density_tracker.update(detections)
-    ├─ If calibrated:
-    │   ├─ Use detection['wx'], detection['wy']
-    │   └─ convex_hull_area_m2() computes real m²
-    └─ Else:
-        ├─ Use detection['cx'], detection['cy']
-        └─ Scale by uniform CELL_AREA_M2
-    ↓
-Density, cells, area returned
+```mermaid
+flowchart TD
+    A[Frame captured] --> B[run_detection]
+    B --> C[YOLO detects humans]
+    C --> D[Compute pixel centroid cx, cy]
+    D --> E{is_calibrated?}
+    E -->|YES| F[wx, wy = px_to_world]
+    E -->|NO| G[Append detection]
+    F --> G
+    G --> H[density_tracker.update]
+    H --> I{is_calibrated?}
+    I -->|YES| J[Use wx, wy and compute real m2 area]
+    I -->|NO| K[Use cx, cy and uniform CELL_AREA_M2]
+    J --> L[Density, cells, area returned]
+    K --> L
 ```
 
 ### Recalibration (Runtime)
 
-```
-User presses 'C' during monitoring
-    ↓
-runtime_recalibration_menu()
-    ├─ If calibrated:
-    │   ├─ V: validate_calibration() → show grid overlay
-    │   └─ R: recalibrate_interactive() → new H
-    └─ Else:
-        └─ C: run_live_calibration_ui() → new H
-    ↓
-homography.npy updated
-    ↓
-Monitoring resumes with new calibration
+```mermaid
+flowchart TD
+    A[User presses 'C' during monitoring] --> B[runtime_recalibration_menu]
+    B --> C{is_calibrated?}
+    C -->|YES| D[V: validate_calibration → show grid overlay]
+    C -->|YES| E[R: recalibrate_interactive → new H]
+    C -->|NO| F[C: run_live_calibration_ui → new H]
+    E --> G[homography.npy updated]
+    F --> G
+    G --> H[Monitoring resumes with new calibration]
+    D --> H
 ```
 
 ---

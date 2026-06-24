@@ -308,39 +308,14 @@ For detailed troubleshooting, see `CALIBRATION_GUIDE.md` → Troubleshooting sec
 
 ## System Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│              CAMERA FEED                       │
-└──────────────────┬──────────────────────────────┘
-                   ↓
-         ┌─────────────────────┐
-         │  YOLO DETECTION     │
-         │  (pixels)           │
-         └──────────┬──────────┘
-                    ↓
-         ┌─────────────────────────┐
-         │  HOMOGRAPHY TRANSFORM   │
-         │  (pixels → metres)      │
-         │  ← homography.npy       │
-         └──────────┬──────────────┘
-                    ↓
-         ┌─────────────────────┐
-         │ DETECTIONS          │
-         │ (wx, wy per person) │
-         └──────────┬──────────┘
-                    ↓
-         ┌─────────────────────┐
-         │ DENSITY TRACKING    │
-         │ (real m² areas)     │
-         └──────────┬──────────┘
-                    ↓
-         ┌─────────────────────┐
-         │ RISK ASSESSMENT     │
-         └──────────┬──────────┘
-                    ↓
-         ┌─────────────────────┐
-         │ LOGGING & ALERTS    │
-         └─────────────────────┘
+```mermaid
+flowchart TD
+    A[CAMERA FEED] --> B[YOLO DETECTION pixels]
+    B -->|homography.npy| C[HOMOGRAPHY TRANSFORM pixels to metres]
+    C --> D[DETECTIONS wx, wy per person]
+    D --> E[DENSITY TRACKING real m2 areas]
+    E --> F[RISK ASSESSMENT]
+    F --> G[LOGGING & ALERTS]
 ```
 
 ---
