@@ -71,7 +71,8 @@ python calibration_tool.py
 python main.py
 ```
 System automatically loads homography.npy.
-All coordinates are now perspective-corrected.
+You will be asked if you want to use AI auto-segmentation for the walkable area.
+All coordinates are now perspective-corrected and the UI will flash congested cells!
 
 ---
 

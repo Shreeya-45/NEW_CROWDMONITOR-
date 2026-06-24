@@ -237,6 +237,13 @@ python calibration_tool.py --validate    # Validate only
 python calibration_tool.py --recalibrate # Force recalibration
 ```
 
+### 6. Robustness Filters [NEW]
+
+**`head_localizer.py`**: Computes accurate ground-contact points (`fx, fy`) from YOLO bounding boxes.
+**`ground_segmentor.py`**: Uses BiSeNetV2 semantic segmentation to automatically generate `MANUAL_ROI`.
+**`congestion.py`**: Analyzes per-cell density to generate localized `WARNING` and `CRITICAL` alerts.
+**`temporal_filter.py`**: Applies EMA smoothing to grid densities to reduce UI jitter.
+
 ---
 
 ## Data Flow Diagrams

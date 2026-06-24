@@ -6,7 +6,7 @@ It computes density in 4 different ways:
 
 ## 1. Physical Crowd Density (People / Occupied Area)
 This is the most precise metric, calculating the density of *only the space where people are currently standing*.
-1. **World Coordinates:** First, every person's pixel coordinate (cx, cy) is passed through the Homography matrix to find their exact physical ground location (wx, wy) in meters.
+1. **World Coordinates:** First, every person's exact foot-contact point (computed via `head_localizer.py`) is passed through the Homography matrix to find their exact physical ground location (wx, wy) in meters.
 2. **DBSCAN Clustering:** The system groups the people into clusters (crowds) versus isolated individuals using an algorithm called DBSCAN.
 3. **Alpha Shapes (Concave Hull):** For a clustered crowd, it draws a "shrink-wrapped" boundary (Concave Hull) around the group's world coordinates. Because it's working in world coordinates, the area of this shape natively evaluates to **Real m²**.
 4. **Obstacle Subtraction:** It actively subtracts the area of any predefined `STATIC_OBSTACLES` (like tables or pillars) if they overlap with the crowd's shape.
@@ -32,4 +32,4 @@ To visualize "hotspots" or pressure points smoothly on the UI, it doesn't just d
 - It then forces the heat map to 0 over static obstacles, preventing "heat" from bleeding into physical objects like walls.
 
 ## Temporal Smoothing
-To ensure the numbers don't rapidly jitter up and down every fraction of a second, all calculated densities are pushed into a rolling history buffer (`BUFFER_SIZE = 15` frames). The final number you see on the screen and in the logs is the **moving average** of the last 15 frames.
+To ensure the numbers don't rapidly jitter up and down every fraction of a second, the system uses an Exponential Moving Average (EMA) filter (`TemporalFilter`) and a rolling history buffer (`BUFFER_SIZE = 15` frames). This smooths out bounding box jitter and frame-to-frame density map fluctuations.

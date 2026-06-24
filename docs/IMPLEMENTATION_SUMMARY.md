@@ -33,6 +33,12 @@ Your crowd monitoring system now has **complete ground-plane mapping and homogra
    - Better error messages and handling
    - Multiple operation modes (calibrate/validate/recalibrate)
 
+6. **🛡️ Robustness Features**
+   - `head_localizer.py`: Accurate ground-contact point mapping.
+   - `ground_segmentor.py`: AI-based walkable area segmentation.
+   - `congestion.py`: Cell-level risk alerting.
+   - `temporal_filter.py`: EMA smoothing for flicker-free UI.
+
 ---
 
 ## Files Created/Modified
@@ -44,6 +50,10 @@ Your crowd monitoring system now has **complete ground-plane mapping and homogra
 | `setup_dataset.py` | Initializes dataset structure in datasets/crowd_data |
 | `train_yolo.py` | Fine-tunes YOLO model on local dataset |
 | `calibration_tool.py` | Interactive GUI calibration wizard |
+| `head_localizer.py` | Standalone foot-point localizer |
+| `ground_segmentor.py` | Walkable area segmentor via BiSeNetV2 |
+| `congestion.py` | Grid-based localized alert generation |
+| `temporal_filter.py` | EMA smoothing for metrics |
 | `CALIBRATION_GUIDE.md` | 📖 Comprehensive documentation |
 | `QUICKSTART.md` | 📖 Quick reference guide |
 | `ARCHITECTURE.md` | 📖 Technical deep-dive |

@@ -232,6 +232,10 @@ CrowdMonitor/
 | [detector.py](detector.py) | 🔄 Enhanced | World coordinate computation |
 | [main.py](main.py) | 🔄 Enhanced | Recalibration menu & controls |
 | [config.py](config.py) | 📝 Update needed | Configuration (WORLD_GRID_W/H) |
+| [head_localizer.py](head_localizer.py) | ✨ New | Accurate foot-point localization |
+| [ground_segmentor.py](ground_segmentor.py)| ✨ New | AI Walkable Area Segmentation |
+| [congestion.py](congestion.py) | ✨ New | Grid-based congestion alerts |
+| [temporal_filter.py](temporal_filter.py)| ✨ New | EMA smoothing for density trends |
 
 ---
 
@@ -399,7 +403,11 @@ CrowdMonitor/
 │   ├── alert.py                 (Alerts)
 │   ├── logger.py                (Logging)
 │   ├── flow.py                  (Flow tracking)
-│   └── context_risk.py          (Risk assessment)
+│   ├── context_risk.py          (Risk assessment)
+│   ├── head_localizer.py        (Foot-point localization)
+│   ├── ground_segmentor.py      (AI area segmentation)
+│   ├── congestion.py            (Grid congestion alerts)
+│   └── temporal_filter.py       (EMA smoothing)
 │
 ├── 📚 DOCUMENTATION (Markdown)
 │   ├── QUICKSTART.md            (← Start here!)
