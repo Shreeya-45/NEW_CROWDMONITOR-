@@ -22,7 +22,7 @@ An enterprise-grade crowd monitoring and analytics system that provides **perspe
 
 ## 🏗️ System Architecture
 
-```mermaid
+\\mermaid
 flowchart TD
     A[CAMERA FEED] -->|YOLOv8| B[HUMAN DETECTION]
     B -->|head_localizer.py| C[FOOT POINT EXTRACTOR]
@@ -32,21 +32,20 @@ flowchart TD
     F -->|Real m²| G[DENSITY METRICS]
     G --> H[CONGESTION DETECTOR]
     H -->|EMA Smoothing| I[LIVE DASHBOARD & ALERTS]
-```
-
+\
 ---
 
 ## 🧠 Methodology & Workflow
 
 ### 1. Calibration & Segmentation
 The system avoids the common pitfall of assuming 1 pixel = 1 meter. 
-Through an interactive calibration phase (`calibration_tool.py`), a **3x3 Homography Matrix** is generated. Additionally, an AI Ground Segmentor optionally isolates the walkable physical bounds of the room, disregarding walls and ceilings.
+Through an interactive calibration phase (\calibration_tool.py\), a **3x3 Homography Matrix** is generated. Additionally, an AI Ground Segmentor optionally isolates the walkable physical bounds of the room, disregarding walls and ceilings.
 
 ### 2. Detection & Ground Mapping
-Using YOLOv8, humans are detected in the frame. Instead of using the generic center of the bounding box, our custom `head_localizer.py` determines the precise foot-to-ground contact point, which is then projected into physical world coordinates (meters) using the perspective matrix.
+Using YOLOv8, humans are detected in the frame. Instead of using the generic center of the bounding box, our custom \head_localizer.py\ determines the precise foot-to-ground contact point, which is then projected into physical world coordinates (meters) using the perspective matrix.
 
 ### 3. Density & Congestion Analysis
-With physical coordinates secured, the system applies DBSCAN clustering and calculates the Concave Hull area of the crowd. This yields highly accurate `people/m²` metrics. A cell-based grid tracks localized bottlenecks over time and automatically triggers flashing `WARNING` or `CRITICAL` alerts on the dashboard.
+With physical coordinates secured, the system applies DBSCAN clustering and calculates the Concave Hull area of the crowd. This yields highly accurate \people/m²\ metrics. A cell-based grid tracks localized bottlenecks over time and automatically triggers flashing \WARNING\ or \CRITICAL\ alerts on the dashboard.
 
 ---
 
@@ -65,23 +64,20 @@ With physical coordinates secured, the system applies DBSCAN clustering and calc
 ## 🚀 Quick Start
 
 ### 1. Configure your floor space
-Update `config.py` to define your physical monitored dimensions:
-```python
+Update \config.py\ to define your physical monitored dimensions:
+\\python
 WORLD_GRID_W = 10.0 # meters (Width)
 WORLD_GRID_H = 8.0  # meters (Depth)
-```
-
+\
 ### 2. Run Calibration
-```bash
+\\ash
 python calibration_tool.py
-```
-*Follow the interactive wizard to click 4 reference points on your floor.*
+\*Follow the interactive wizard to click 4 reference points on your floor.*
 
 ### 3. Start Monitoring
-```bash
+\\ash
 python main.py
-```
-*Note: Press `C` during runtime to access live recalibration menus without restarting the server.*
+\*Note: Press \C\ during runtime to access live recalibration menus without restarting the server.*
 
 ---
 
@@ -97,3 +93,4 @@ Dive deeper into the individual components and technical methodologies:
 | 📐 **[Density Math](docs/density_calculation_explanation.md)** | How physical m² metrics are derived and clustered |
 | 🧠 **[Architecture Deep-Dive](docs/ARCHITECTURE.md)** | Deep dive into technical data flows and pipelines |
 | 📋 **[Implementation Summary](docs/IMPLEMENTATION_SUMMARY.md)**| Overview of robustness features and version history |
+
