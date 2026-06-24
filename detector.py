@@ -4,6 +4,7 @@ from ultralytics import YOLO
 import calibration
 from config import (MODEL_PATH, CONF_THRESHOLD, GRID_ROWS, GRID_COLS,
                     OCCLUSION_CORRECTION, OCCLUSION_GAIN)
+from head_localizer import HeadLocalizer
 
 
 def load_model():
@@ -61,23 +62,28 @@ def run_detection(model, frame, frame_h, frame_w):
             x1, y1, x2, y2 = map(int, box.xyxy[0])
             cx = (x1+x2)//2
             cy = (y1+y2)//2
+            
+            # Use HeadLocalizer for accurate foot point
+            fx, fy, bbox_h = HeadLocalizer.compute_foot_point(x1, y1, x2, y2)
+            fx, fy = int(fx), int(fy)
+            
             col = min(cx // cell_w, GRID_COLS-1)
             row = min(cy // cell_h, GRID_ROWS-1)
             pid = int(box.id[0]) if box.id is not None else -1
             zone_counts[row][col] += 1
             boxes_raw.append((x1, y1, x2, y2))
             
-            # Compute world coordinates if calibrated
+            # Compute world coordinates if calibrated (using FOOT POINT)
             wx, wy = None, None
             if calibration.is_calibrated():
                 try:
-                    world_pt = calibration.px_to_world([(cx, cy)])
+                    world_pt = calibration.px_to_world([(fx, fy)])
                     wx, wy = float(world_pt[0, 0]), float(world_pt[0, 1])
                 except:
                     wx, wy = None, None
             
             detections.append(dict(x1=x1, y1=y1, x2=x2, y2=y2,
-                                   cx=cx, cy=cy, fx=cx, fy=y2,
+                                   cx=cx, cy=cy, fx=fx, fy=fy,
                                    wx=wx, wy=wy,
                                    row=row, col=col, pid=pid))
 

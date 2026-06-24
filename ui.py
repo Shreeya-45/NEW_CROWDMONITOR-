@@ -262,6 +262,29 @@ def draw_grid_heatmap(frame, cell_densities):
                 border_rect(frame, (lx-3, ly-lh-3), (lx+lw+3, ly+4), C_CYAN_DIM, 1)
                 put_bold(frame, label, (lx, ly), 0.50, C_TEXT)
 
+def draw_congestion_alerts(frame, cell_alerts, frame_idx):
+    """Draw warning/critical bounding boxes and labels for congested cells."""
+    if not cell_alerts:
+        return
+        
+    for alert in cell_alerts:
+        x1, y1, x2, y2 = alert.cell_bounds
+        color = C_ORANGE if alert.severity == "WARNING" else C_RED
+        
+        # Flashing effect based on frame_idx
+        t = frame_idx * 0.2
+        pulse = int(abs(np.sin(t)) * 100) + 100 # Pulse alpha basically via color brightness
+        pulse_color = (min(color[0] + pulse, 255), min(color[1] + pulse, 255), min(color[2] + pulse, 255))
+        
+        # Draw thick border
+        border_rect(frame, (x1, y1), (x2, y2), pulse_color, thickness=3)
+        
+        # Label with background
+        lbl = alert.severity
+        tw, th = text_size(lbl, 0.4, 2)
+        filled_rect(frame, (x1, y1), (x1+tw+8, y1+th+8), (0,0,0), alpha=0.7)
+        put_bold(frame, lbl, (x1+4, y1+th+4), 0.4, pulse_color)
+
 def draw_static_exclusions(frame):
     """Visualize ROI boundaries and static obstacle polygons (furniture) on the feed."""
     if not calibration.is_calibrated():
@@ -764,7 +787,7 @@ def render_frame(frame, detections, cell_densities, density_history,
                  risk, risk_color, frame_idx, alert_active,
                  hull_pts=None, hull_area_m2=0.0, kde_map=None,
                  zone_counts=None,
-                 hull_type="None", alpha_value=0.0):
+                 hull_type="None", alpha_value=0.0, cell_alerts=None):
 
     if zone_counts is None:
         zone_counts = [[0] * GRID_COLS for _ in range(GRID_ROWS)]
@@ -790,6 +813,7 @@ def render_frame(frame, detections, cell_densities, density_history,
         feed = cv2.addWeighted(feed, 1.0, kde_overlay, 0.4, 0)
 
     draw_detections(feed, detections)
+    draw_congestion_alerts(feed, cell_alerts, frame_idx)
     draw_corner_brackets(feed, feed_h, feed_w_px)
     draw_hull_area_label(feed, hull_area_m2, feed_h, feed_w_px)
 

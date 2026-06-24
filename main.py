@@ -29,6 +29,10 @@ from ui         import render_frame, select_place
 from context_risk import get_context_risk, get_place
 import calibration
 
+from ground_segmentor import GroundSegmentor
+from temporal_filter import TemporalFilter
+from congestion import CongestionDetector
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Calibration management
@@ -170,6 +174,9 @@ def main():
     select_place()
     print("Selected Place:", get_place())
 
+    use_auto_seg = input("\nDo you want to use AI auto-segmentation for the walkable area? (y/n): ").strip().lower() == 'y'
+    segmentor = GroundSegmentor() if use_auto_seg else None
+
     # 3. Init log file
     init_log()
 
@@ -189,6 +196,14 @@ def main():
     flow_tracker    = FlowTracker()
     cnn_model       = DensityCNN() if os.path.exists(os.path.join("models", "crowd_cnn.pt")) else None
     alert_manager   = AlertManager()
+    
+    # 7. Robustness Filters
+    temporal_filter = TemporalFilter()
+    congestion_detector = CongestionDetector(
+        roi_polygon=None,  # We'll use the default full frame initially
+        frame_shape=(CAPTURE_H, CAPTURE_W),
+        rows=GRID_ROWS, cols=GRID_COLS
+    )
 
     frame_idx = 0
     prev      = time.time()
@@ -209,10 +224,31 @@ def main():
         frame_idx += 1
         h, w = frame.shape[:2]
 
+        # ── Auto Segmentation (Run once) ──────────────────────────────────
+        if frame_idx == 1 and segmentor and segmentor.is_available:
+            print("\n[AI] Running ground segmentation on first frame...")
+            mask = segmentor.segment(frame)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            if contours:
+                largest_contour = max(contours, key=cv2.contourArea)
+                pts_px = largest_contour.reshape(-1, 2)
+                if calibration.is_calibrated():
+                    import config
+                    pts_w = calibration.px_to_world(pts_px.tolist())
+                    config.MANUAL_ROI = pts_w.tolist()
+                    print(f"[AI] Auto-generated monitoring zone with {len(pts_w)} points.")
+
         # ── Detection ─────────────────────────────────────────────────────
         detections, _, count, overlap, zone_counts = run_detection(
             model, frame, h, w
         )
+        
+        # ── Temporal Smoothing ────────────────────────────────────────────
+        zone_counts_np = np.array(zone_counts, dtype=np.float32)
+        smoothed_counts = temporal_filter.update(zone_counts_np)
+        
+        # ── Cell-Level Congestion Alerts ──────────────────────────────────
+        _, cell_alerts = congestion_detector.analyze(detections)
 
         # ── CNN Density Estimation ────────────────────────────────────────
         cnn_count, cnn_map = 0.0, None
@@ -271,12 +307,13 @@ def main():
             alert_active=alert_active,
             hull_pts=hull,
             hull_area_m2=area,
-            zone_counts=zone_counts,
+            zone_counts=smoothed_counts.tolist(), # Use smoothed counts
             kde_map=kde_map,
             phys_density=phys_density,
             room_density=room_density,
             hull_type=hull_type,
-            alpha_value=alpha_value
+            alpha_value=alpha_value,
+            cell_alerts=cell_alerts # Pass congestion alerts
         )
 
         cv2.imshow("Crowd Density Monitoring", output)
